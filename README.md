@@ -8,8 +8,8 @@ go get github.com/jroimartin/gopod
 
 Commands
 --------
-$ gopod -h
-Usage of gopod:
+$ gopod -h  
+Usage of gopod:  
   -a="": add a new podcast  
   -config="/home/x/.gopodrc": file to store rss list  
   -folder="/home/x/podcasts": folder to store podcasts  
