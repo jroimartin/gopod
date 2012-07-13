@@ -23,6 +23,53 @@ var (
 	sync          = flag.Bool("s", false, "sync podcasts")
 )
 
+func downloadPodcast(rss string) error {
+	p := podcast.NewPodcast(rss)
+	err := p.Get()
+	if err != nil {
+		return err
+	}
+	l := podcast.NewPodcastLog(*log)
+	for i, e := range p.XML.Episodes {
+		exists, err := l.CheckLog(e.Enclosure.Url)
+		if err != nil {
+			return err
+		}
+		if exists {
+			continue
+		}
+		fmt.Fprintf(os.Stderr, "Downloading [%d] %s...", i, e.Enclosure.Url)
+		err = e.Download(*folder)
+		if err != nil {
+			return err
+		}
+		fmt.Fprintln(os.Stderr, "DONE")
+		err = l.AddLog(e.Enclosure.Url)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func syncPodcast(l *podcast.PodcastList) error {
+	podcasts, err := l.Get()
+	if err != nil {
+		return err
+	}
+	err = os.Mkdir(*folder, 0755)
+	if err != nil && !os.IsExist(err) {
+		return err
+	}
+	for _, p := range podcasts {
+		err = downloadPodcast(p)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func showInfo(l *podcast.PodcastList, n int) error {
 	podcasts, err := l.Get()
 	if err != nil {
@@ -48,6 +95,8 @@ func main() {
 		err = l.Remove(*remove)
 	case *info != -1:
 		err = showInfo(l, *info)
+	case *sync:
+		err = syncPodcast(l)
 	case *list:
 		fmt.Print(l)
 	default:

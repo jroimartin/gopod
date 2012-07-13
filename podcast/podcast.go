@@ -55,19 +55,11 @@ func (p *Podcast) Get() error {
 	return nil
 }
 
-func (p *Podcast) String() string {
-	s := fmt.Sprintln("Title:", p.XML.Title)
-	s += fmt.Sprintln("Link:", p.XML.Link)
-	s += fmt.Sprintln("Description:", p.XML.Description)
-	s += fmt.Sprintln("Episodes:", len(p.XML.Episodes))
-	return s
-}
-
 func (e *Episode) Download(folder string) error {
-	url := e.Link
+	url := e.Enclosure.Url
 	fname := filepath.Join(folder, filepath.Base(url))
 
-	f, err := os.OpenFile(fname, os.O_CREATE|os.O_WRONLY, 0644)
+	f, err := os.OpenFile(fname, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
 	if err != nil {
 		return err
 	}
@@ -84,4 +76,12 @@ func (e *Episode) Download(folder string) error {
 		return err
 	}
 	return nil
+}
+
+func (p *Podcast) String() string {
+	s := fmt.Sprintln("Title:", p.XML.Title)
+	s += fmt.Sprintln("Link:", p.XML.Link)
+	s += fmt.Sprintln("Description:", p.XML.Description)
+	s += fmt.Sprintln("Episodes:", len(p.XML.Episodes))
+	return s
 }
