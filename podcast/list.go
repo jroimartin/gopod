@@ -1,11 +1,11 @@
 package podcast
 
 import (
-	"fmt"
-	"os"
-	"io"
 	"bufio"
 	"errors"
+	"fmt"
+	"io"
+	"os"
 )
 
 type PodcastList struct {

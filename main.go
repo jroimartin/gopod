@@ -12,14 +12,15 @@ import (
 var (
 	defaultFolder = path.Join(os.Getenv("HOME"), "podcasts")
 	defaultConfig = filepath.Join(os.Getenv("HOME"), ".gopodrc")
-	defaultLog = filepath.Join(os.Getenv("HOME"), ".gopod_log")
-	folder = flag.String("folder", defaultFolder, "folder to store podcasts")
-	config = flag.String("config", defaultConfig, "file to store rss list")
-	log = flag.String("log", defaultLog, "file to track downloaded episodes")
-	add = flag.String("a", "", "add a new podcast")
-	remove = flag.Int("r", -1, "remove a podcast")
-	info = flag.Int("i", -1, "show podcast info")
-	sync = flag.Bool("s", false, "sync podcasts")
+	defaultLog    = filepath.Join(os.Getenv("HOME"), ".gopod_log")
+	folder        = flag.String("folder", defaultFolder, "folder to store podcasts")
+	config        = flag.String("config", defaultConfig, "file to store rss list")
+	log           = flag.String("log", defaultLog, "file to track downloaded episodes")
+	add           = flag.String("a", "", "add a new podcast")
+	remove        = flag.Int("r", -1, "remove a podcast")
+	info          = flag.Int("i", -1, "show podcast info")
+	list          = flag.Bool("l", false, "list podcasts")
+	sync          = flag.Bool("s", false, "sync podcasts")
 )
 
 func showInfo(l *podcast.PodcastList, n int) error {
@@ -47,8 +48,11 @@ func main() {
 		err = l.Remove(*remove)
 	case *info != -1:
 		err = showInfo(l, *info)
-	default:
+	case *list:
 		fmt.Print(l)
+	default:
+		flag.Usage()
+		os.Exit(2)
 	}
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Error:", err)
