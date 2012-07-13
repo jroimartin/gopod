@@ -38,7 +38,7 @@ func (l *PodcastLog) CheckLog(url string) (bool, error) {
 	return false, nil
 }
 
-func (l *PodcastLog) AddLog(url string)  error {
+func (l *PodcastLog) AddLog(url string) error {
 	flags := os.O_CREATE | os.O_APPEND | os.O_WRONLY
 	f, err := os.OpenFile(l.file, flags, 0644)
 	if err != nil {
