@@ -2,12 +2,15 @@ package podcast
 
 import (
 	"encoding/xml"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
 	"path/filepath"
 )
+
+var PrintStatus func(written, total int64) = nil
 
 type Enclosure struct {
 	Url  string `xml:"url,attr"`
@@ -55,6 +58,36 @@ func (p *Podcast) Get() error {
 	return nil
 }
 
+func wget(dst io.Writer, src io.Reader, total int64) error {
+	buf := make([]byte, 32*1024)
+	var written int64
+	for {
+		nr, er := src.Read(buf)
+		if nr > 0 {
+			nw, ew := dst.Write(buf[0:nr])
+			if nw > 0 {
+				written += int64(nw)
+			}
+			if ew != nil {
+				return ew
+			}
+			if nr != nw {
+				return errors.New("Bytes read != Bytes written")
+			}
+		}
+		if er == io.EOF {
+			break
+		}
+		if er != nil {
+			return er
+		}
+		if PrintStatus != nil {
+			PrintStatus(written, total)
+		}
+	}
+	return nil
+}
+
 func (e *Episode) Download(folder string) error {
 	url := e.Enclosure.Url
 	fname := filepath.Join(folder, filepath.Base(url))
@@ -71,7 +104,7 @@ func (e *Episode) Download(folder string) error {
 	}
 	defer r.Body.Close()
 
-	_, err = io.Copy(f, r.Body)
+	err = wget(f, r.Body, r.ContentLength)
 	if err != nil {
 		return err
 	}

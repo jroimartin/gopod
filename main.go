@@ -7,6 +7,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
 )
 
 var (
@@ -23,6 +24,12 @@ var (
 	sync          = flag.Bool("s", false, "sync podcasts")
 )
 
+func printStatus(written, total int64) {
+	percent := (float64(written) / float64(total)) * 100
+	bar := strings.Repeat("=", int(percent/10.0))
+	fmt.Fprintf(os.Stderr, "\r%d%% [%-10s] %d/%d", int(percent), bar, written, total)
+}
+
 func downloadPodcast(rss string) error {
 	p := podcast.NewPodcast(rss)
 	err := p.Get()
@@ -38,12 +45,12 @@ func downloadPodcast(rss string) error {
 		if exists {
 			continue
 		}
-		fmt.Fprintf(os.Stderr, "Downloading [%d] %s...", i, e.Enclosure.Url)
+		fmt.Fprintf(os.Stderr, "Downloading [%d] %s...\n", i, e.Enclosure.Url)
 		err = e.Download(*folder)
 		if err != nil {
 			return err
 		}
-		fmt.Fprintln(os.Stderr, "DONE")
+		fmt.Fprintf(os.Stderr, "\n")
 		err = l.Add(e.Enclosure.Url)
 		if err != nil {
 			return err
@@ -96,6 +103,7 @@ func main() {
 	case *info != -1:
 		err = showInfo(l, *info)
 	case *sync:
+		podcast.PrintStatus = printStatus
 		err = syncPodcast(l)
 	case *list:
 		fmt.Print(l)

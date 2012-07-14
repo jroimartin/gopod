@@ -42,6 +42,13 @@ func (l *PodcastList) Get() ([]string, error) {
 }
 
 func (l *PodcastList) Add(url string) error {
+	exists, err := l.Check(url)
+	if err != nil {
+		return err
+	}
+	if exists {
+		return errors.New("the podcast already exists")
+	}
 	flags := os.O_CREATE | os.O_APPEND | os.O_WRONLY
 	f, err := os.OpenFile(l.file, flags, 0644)
 	if err != nil {
