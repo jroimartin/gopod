@@ -47,7 +47,7 @@ func (l *PodcastList) Add(url string) error {
 		return err
 	}
 	if exists {
-		return errors.New("the podcast already exists")
+		return errors.New("duplicated podcast")
 	}
 	flags := os.O_CREATE | os.O_APPEND | os.O_WRONLY
 	f, err := os.OpenFile(l.file, flags, 0644)

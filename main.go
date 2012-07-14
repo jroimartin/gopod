@@ -22,6 +22,7 @@ var (
 	info          = flag.Int("i", -1, "show podcast info")
 	list          = flag.Bool("l", false, "list podcasts")
 	sync          = flag.Bool("s", false, "sync podcasts")
+	all           = flag.Bool("A", false, "mark all podcasts as downloaded")
 )
 
 func printStatus(written, total int64) {
@@ -77,6 +78,43 @@ func syncPodcast(l *podcast.PodcastList) error {
 	return nil
 }
 
+func logPodcast(rss string) error {
+	p := podcast.NewPodcast(rss)
+	err := p.Get()
+	if err != nil {
+		return err
+	}
+	log := podcast.NewPodcastList(*log)
+	for _, e := range p.XML.Episodes {
+		exists, err := log.Check(e.Enclosure.Url)
+		if err != nil {
+			return err
+		}
+		if exists {
+			continue
+		}
+		err = log.Add(e.Enclosure.Url)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func logAll(l *podcast.PodcastList) error {
+	podcasts, err := l.Get()
+	if err != nil {
+		return err
+	}
+	for _, rss := range podcasts {
+		err = logPodcast(rss)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func showInfo(l *podcast.PodcastList, n int) error {
 	podcasts, err := l.Get()
 	if err != nil {
@@ -105,6 +143,8 @@ func main() {
 	case *sync:
 		podcast.PrintStatus = printStatus
 		err = syncPodcast(l)
+	case *all:
+		err = logAll(l)
 	case *list:
 		fmt.Print(l)
 	default:
