@@ -29,9 +29,9 @@ func downloadPodcast(rss string) error {
 	if err != nil {
 		return err
 	}
-	l := podcast.NewPodcastLog(*log)
+	l := podcast.NewPodcastList(*log)
 	for i, e := range p.XML.Episodes {
-		exists, err := l.CheckLog(e.Enclosure.Url)
+		exists, err := l.Check(e.Enclosure.Url)
 		if err != nil {
 			return err
 		}
@@ -44,7 +44,7 @@ func downloadPodcast(rss string) error {
 			return err
 		}
 		fmt.Fprintln(os.Stderr, "DONE")
-		err = l.AddLog(e.Enclosure.Url)
+		err = l.Add(e.Enclosure.Url)
 		if err != nil {
 			return err
 		}
