@@ -17,5 +17,6 @@ Commands
 	  -i=-1: show podcast info
 	  -l=false: list podcasts
 	  -log="/home/x/.gopod_log": file to track downloaded episodes
+	  -q=false: be quiet while syncing
 	  -r=-1: remove a podcast
 	  -s=false: sync podcasts

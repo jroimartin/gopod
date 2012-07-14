@@ -23,6 +23,7 @@ var (
 	list          = flag.Bool("l", false, "list podcasts")
 	sync          = flag.Bool("s", false, "sync podcasts")
 	all           = flag.Bool("A", false, "mark all podcasts as downloaded")
+	quiet         = flag.Bool("q", false, "be quiet while syncing")
 )
 
 func printStatus(written, total int64) {
@@ -46,12 +47,16 @@ func downloadPodcast(rss string) error {
 		if exists {
 			continue
 		}
-		fmt.Fprintf(os.Stderr, "Downloading [%d] %s...\n", i, e.Enclosure.Url)
+		if !*quiet {
+			fmt.Fprintf(os.Stderr, "Downloading [%d] %s...\n", i, e.Enclosure.Url)
+		}
 		err = e.Download(*folder)
 		if err != nil {
 			return err
 		}
-		fmt.Fprintf(os.Stderr, "\n")
+		if !*quiet {
+			fmt.Fprintf(os.Stderr, "\n")
+		}
 		err = l.Add(e.Enclosure.Url)
 		if err != nil {
 			return err
@@ -141,7 +146,9 @@ func main() {
 	case *info != -1:
 		err = showInfo(l, *info)
 	case *sync:
-		podcast.PrintStatus = printStatus
+		if !*quiet {
+			podcast.PrintStatus = printStatus
+		}
 		err = syncPodcast(l)
 	case *all:
 		err = logAll(l)
