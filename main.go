@@ -27,7 +27,7 @@ var (
 )
 
 func printStatus(written, total int64) {
-	percent := (float64(written) / float64(total)) * 100
+	percent := (float64(written) / float64(total)) * 100.0
 	bar := strings.Repeat("=", int(percent/10.0))
 	fmt.Fprintf(os.Stderr, "\r%d%% [%-10s] %d/%d", int(percent), bar, written, total)
 }

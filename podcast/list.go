@@ -10,18 +10,18 @@ import (
 )
 
 type PodcastList struct {
-	file string
+	File string
 }
 
 func NewPodcastList(file string) *PodcastList {
-	return &PodcastList{file: file}
+	return &PodcastList{File: file}
 }
 
 func (l *PodcastList) Get() ([]string, error) {
-	f, err := os.Open(l.file)
+	f, err := os.Open(l.File)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return nil, errors.New("No podcasts")
+			return nil, errors.New("no podcasts")
 		}
 		return nil, err
 	}
@@ -50,7 +50,7 @@ func (l *PodcastList) Add(url string) error {
 		return errors.New("duplicated podcast")
 	}
 	flags := os.O_CREATE | os.O_APPEND | os.O_WRONLY
-	f, err := os.OpenFile(l.file, flags, 0644)
+	f, err := os.OpenFile(l.File, flags, 0644)
 	if err != nil {
 		return err
 	}
@@ -67,7 +67,7 @@ func (l *PodcastList) Remove(n int) error {
 	if err != nil {
 		return err
 	}
-	f, err := os.Create(l.file)
+	f, err := os.Create(l.File)
 	if err != nil {
 		return err
 	}
@@ -85,7 +85,7 @@ func (l *PodcastList) Remove(n int) error {
 }
 
 func (l *PodcastList) Check(url string) (bool, error) {
-	f, err := os.Open(l.file)
+	f, err := os.Open(l.File)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return false, nil
