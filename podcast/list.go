@@ -14,14 +14,12 @@ type List struct {
 	Items []string
 }
 
-func NewList() *List {
-	return &List{}
+func NewList(file string) *List {
+	return &List{File: file, Items: make([]string, 0)}
 }
 
 func Open(file string) (*List, error) {
-	l := NewList()
-	l.File = file
-	l.Items = make([]string, 0)
+	l := NewList(file)
 	f, err := os.Open(file)
 	if err != nil {
 		if os.IsNotExist(err) {

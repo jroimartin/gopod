@@ -76,8 +76,7 @@ func showInfo(n int) error {
 	if n < 0 || n >= len(lrss.Items) {
 		return errors.New("index out of bounds")
 	}
-	p := podcast.NewPodcast(lrss.Items[n])
-	err := p.Get()
+	p, err := podcast.Get(lrss.Items[n])
 	if err != nil {
 		return err
 	}
@@ -106,8 +105,7 @@ func syncAll() error {
 }
 
 func syncPodcast(rss string) error {
-	p := podcast.NewPodcast(rss)
-	err := p.Get()
+	p, err := podcast.Get(rss)
 	if err != nil {
 		return err
 	}
@@ -129,6 +127,10 @@ func syncPodcast(rss string) error {
 		if err != nil {
 			return err
 		}
+		err = llog.Dump()
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -144,8 +146,7 @@ func logAll() error {
 }
 
 func logPodcast(rss string) error {
-	p := podcast.NewPodcast(rss)
-	err := p.Get()
+	p, err := podcast.Get(rss)
 	if err != nil {
 		return err
 	}

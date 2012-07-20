@@ -43,19 +43,20 @@ func NewPodcast(url string) *Podcast {
 	return &Podcast{Url: url}
 }
 
-func (p *Podcast) Get() error {
-	resp, err := http.Get(p.Url)
+func Get(url string) (*Podcast, error) {
+	p := NewPodcast(url)
+	resp, err := http.Get(url)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer resp.Body.Close()
 
 	d := xml.NewDecoder(resp.Body)
 	err = d.Decode(&p.XML)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+	return p, nil
 }
 
 func wget(dst io.Writer, src io.Reader, total int64) error {
