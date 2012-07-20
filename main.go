@@ -1,7 +1,9 @@
 package main
 
 import (
+	"errors"
 	"flag"
+	"log"
 	"fmt"
 	"github.com/jroimartin/gopod/podcast"
 	"os"
@@ -12,11 +14,11 @@ import (
 
 var (
 	defaultFolder = path.Join(os.Getenv("HOME"), "podcasts")
-	defaultConfig = filepath.Join(os.Getenv("HOME"), ".gopodrc")
-	defaultLog    = filepath.Join(os.Getenv("HOME"), ".gopod_log")
+	defaultConfigFile = filepath.Join(os.Getenv("HOME"), ".gopodrc")
+	defaultLogFile    = filepath.Join(os.Getenv("HOME"), ".gopod_log")
 	folder        = flag.String("folder", defaultFolder, "folder to store podcasts")
-	config        = flag.String("config", defaultConfig, "file to store rss list")
-	log           = flag.String("log", defaultLog, "file to track downloaded episodes")
+	configFile        = flag.String("config", defaultConfigFile, "file to store rss list")
+	logFile           = flag.String("log", defaultLogFile, "file to track downloaded episodes")
 	add           = flag.String("a", "", "add a new podcast")
 	remove        = flag.Int("r", -1, "remove a podcast")
 	info          = flag.Int("i", -1, "show podcast info")
@@ -26,25 +28,91 @@ var (
 	quiet         = flag.Bool("q", false, "be quiet while syncing")
 )
 
+var lrss, llog *podcast.List
+
+func main() {
+	var err error
+
+	flag.Parse()
+
+	lrss, err = podcast.Open(*configFile)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	defer lrss.Dump()
+	llog, err = podcast.Open(*logFile)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	defer llog.Dump()
+
+	switch {
+	case *add != "":
+		err = lrss.Add(*add)
+	case *remove != -1:
+		err = lrss.Remove(*remove)
+	case *info != -1:
+		err = showInfo(*info)
+	case *sync:
+		if !*quiet {
+			podcast.PrintStatus = printStatus
+		}
+		err = syncAll()
+	case *all:
+		err = logAll()
+	case *list:
+		fmt.Print(lrss)
+	default:
+		flag.Usage()
+		os.Exit(2)
+	}
+
+	if err != nil {
+		log.Fatalln("Error:", err)
+	}
+}
+
+func showInfo(n int) error {
+	if n < 0 || n >= len(lrss.Items) {
+		return errors.New("index out of bounds")
+	}
+	p := podcast.NewPodcast(lrss.Items[n])
+	err := p.Get()
+	if err != nil {
+		return err
+	}
+	fmt.Println(p)
+	return nil
+}
+
 func printStatus(written, total int64) {
 	percent := (float64(written) / float64(total)) * 100.0
 	bar := strings.Repeat("=", int(percent/10.0))
 	fmt.Fprintf(os.Stderr, "\r%d%% [%-10s] %d/%d", int(percent), bar, written, total)
 }
 
-func downloadPodcast(rss string) error {
+func syncAll() error {
+	err := os.Mkdir(*folder, 0755)
+	if err != nil && !os.IsExist(err) {
+		return err
+	}
+	for _, rss := range lrss.Items {
+		err = syncPodcast(rss)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func syncPodcast(rss string) error {
 	p := podcast.NewPodcast(rss)
 	err := p.Get()
 	if err != nil {
 		return err
 	}
-	l := podcast.NewPodcastList(*log)
 	for i, e := range p.XML.Episodes {
-		exists, err := l.Check(e.Enclosure.Url)
-		if err != nil {
-			return err
-		}
-		if exists {
+		if llog.Exists(e.Enclosure.Url) {
 			continue
 		}
 		if !*quiet {
@@ -57,7 +125,7 @@ func downloadPodcast(rss string) error {
 		if !*quiet {
 			fmt.Fprintf(os.Stderr, "\n")
 		}
-		err = l.Add(e.Enclosure.Url)
+		err = llog.Add(e.Enclosure.Url)
 		if err != nil {
 			return err
 		}
@@ -65,17 +133,9 @@ func downloadPodcast(rss string) error {
 	return nil
 }
 
-func syncPodcast(l *podcast.PodcastList) error {
-	podcasts, err := l.Get()
-	if err != nil {
-		return err
-	}
-	err = os.Mkdir(*folder, 0755)
-	if err != nil && !os.IsExist(err) {
-		return err
-	}
-	for _, p := range podcasts {
-		err = downloadPodcast(p)
+func logAll() error {
+	for _, rss := range lrss.Items {
+		err := logPodcast(rss)
 		if err != nil {
 			return err
 		}
@@ -89,77 +149,14 @@ func logPodcast(rss string) error {
 	if err != nil {
 		return err
 	}
-	log := podcast.NewPodcastList(*log)
 	for _, e := range p.XML.Episodes {
-		exists, err := log.Check(e.Enclosure.Url)
-		if err != nil {
-			return err
-		}
-		if exists {
+		if llog.Exists(e.Enclosure.Url) {
 			continue
 		}
-		err = log.Add(e.Enclosure.Url)
+		err = llog.Add(e.Enclosure.Url)
 		if err != nil {
 			return err
 		}
 	}
 	return nil
-}
-
-func logAll(l *podcast.PodcastList) error {
-	podcasts, err := l.Get()
-	if err != nil {
-		return err
-	}
-	for _, rss := range podcasts {
-		err = logPodcast(rss)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func showInfo(l *podcast.PodcastList, n int) error {
-	podcasts, err := l.Get()
-	if err != nil {
-		return err
-	}
-	p := podcast.NewPodcast(podcasts[n])
-	err = p.Get()
-	if err != nil {
-		return err
-	}
-	fmt.Println(p)
-	return nil
-}
-
-func main() {
-	flag.Parse()
-	l := podcast.NewPodcastList(*config)
-	var err error
-	switch {
-	case *add != "":
-		err = l.Add(*add)
-	case *remove != -1:
-		err = l.Remove(*remove)
-	case *info != -1:
-		err = showInfo(l, *info)
-	case *sync:
-		if !*quiet {
-			podcast.PrintStatus = printStatus
-		}
-		err = syncPodcast(l)
-	case *all:
-		err = logAll(l)
-	case *list:
-		fmt.Print(l)
-	default:
-		flag.Usage()
-		os.Exit(2)
-	}
-	if err != nil {
-		fmt.Fprintln(os.Stderr, "Error:", err)
-		os.Exit(1)
-	}
 }

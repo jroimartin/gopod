@@ -9,74 +9,50 @@ import (
 	"strings"
 )
 
-type PodcastList struct {
+type List struct {
 	File string
+	Items []string
 }
 
-func NewPodcastList(file string) *PodcastList {
-	return &PodcastList{File: file}
+func NewList() *List {
+	return &List{}
 }
 
-func (l *PodcastList) Get() ([]string, error) {
-	f, err := os.Open(l.File)
+func Open(file string) (*List, error) {
+	l := NewList()
+	l.File = file
+	l.Items = make([]string, 0)
+	f, err := os.Open(file)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return nil, errors.New("no podcasts")
+			return l, nil
 		}
 		return nil, err
 	}
 	defer f.Close()
 	r := bufio.NewReader(f)
-	var podcasts []string
 	for {
 		line, _, err := r.ReadLine()
 		if err == io.EOF {
-			return podcasts, nil
+			return l, nil
 		}
 		if err != nil {
 			return nil, err
 		}
-		podcasts = append(podcasts, string(line))
+		l.Items = append(l.Items, string(line))
 	}
-	return podcasts, nil
+	return l, nil
 }
 
-func (l *PodcastList) Add(url string) error {
-	exists, err := l.Check(url)
-	if err != nil {
-		return err
-	}
-	if exists {
-		return errors.New("duplicated podcast")
-	}
-	flags := os.O_CREATE | os.O_APPEND | os.O_WRONLY
+func (l *List) Dump() error {
+	flags := os.O_CREATE | os.O_TRUNC | os.O_WRONLY
 	f, err := os.OpenFile(l.File, flags, 0644)
 	if err != nil {
 		return err
 	}
 	defer f.Close()
-	_, err = fmt.Fprintln(f, url)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (l *PodcastList) Remove(n int) error {
-	podcasts, err := l.Get()
-	if err != nil {
-		return err
-	}
-	f, err := os.Create(l.File)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-	for i, p := range podcasts {
-		if i == n {
-			continue
-		}
-		_, err = fmt.Fprintln(f, p)
+	for _, item := range l.Items {
+		_, err = fmt.Fprintln(f, item)
 		if err != nil {
 			return err
 		}
@@ -84,39 +60,42 @@ func (l *PodcastList) Remove(n int) error {
 	return nil
 }
 
-func (l *PodcastList) Check(url string) (bool, error) {
-	f, err := os.Open(l.File)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return false, nil
-		}
-		return false, err
+func (l *List) Add(url string) error {
+	if l.Exists(url) {
+		return errors.New("duplicated podcast")
 	}
-	defer f.Close()
-	r := bufio.NewReader(f)
-	for {
-		line, _, err := r.ReadLine()
-		if err == io.EOF {
-			return false, nil
-		}
-		if err != nil {
-			return false, err
-		}
-		if strings.Contains(string(line), url) {
-			return true, nil
-		}
-	}
-	return false, nil
+	l.Items = append(l.Items, url)
+	return nil
 }
 
-func (l *PodcastList) String() string {
-	var s string
-	podcasts, err := l.Get()
-	if err != nil {
-		return ""
+func (l *List) Remove(n int) error {
+	if n < 0 || n >= len(l.Items) {
+		return errors.New("index out of bounds")
 	}
-	for i, p := range podcasts {
-		s += fmt.Sprintf("[%d] %s\n", i, p)
+	tmp := make([]string, 0)
+	for i, item := range l.Items {
+		if i == n {
+			continue
+		}
+		tmp = append(tmp, item)
+	}
+	l.Items = tmp
+	return nil
+}
+
+func (l *List) Exists(url string) bool {
+	for _, item := range l.Items {
+		if strings.Contains(item, url) {
+			return true
+		}
+	}
+	return false
+}
+
+func (l *List) String() string {
+	var s string
+	for i, item := range l.Items {
+		s += fmt.Sprintf("[%d] %s\n", i, item)
 	}
 	return s
 }
