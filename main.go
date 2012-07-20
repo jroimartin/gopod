@@ -3,9 +3,9 @@ package main
 import (
 	"errors"
 	"flag"
-	"log"
 	"fmt"
 	"github.com/jroimartin/gopod/podcast"
+	"log"
 	"os"
 	"path"
 	"path/filepath"
@@ -13,19 +13,19 @@ import (
 )
 
 var (
-	defaultFolder = path.Join(os.Getenv("HOME"), "podcasts")
+	defaultFolder     = path.Join(os.Getenv("HOME"), "podcasts")
 	defaultConfigFile = filepath.Join(os.Getenv("HOME"), ".gopodrc")
 	defaultLogFile    = filepath.Join(os.Getenv("HOME"), ".gopod_log")
-	folder        = flag.String("folder", defaultFolder, "folder to store podcasts")
+	folder            = flag.String("folder", defaultFolder, "folder to store podcasts")
 	configFile        = flag.String("config", defaultConfigFile, "file to store rss list")
 	logFile           = flag.String("log", defaultLogFile, "file to track downloaded episodes")
-	add           = flag.String("a", "", "add a new podcast")
-	remove        = flag.Int("r", -1, "remove a podcast")
-	info          = flag.Int("i", -1, "show podcast info")
-	list          = flag.Bool("l", false, "list podcasts")
-	sync          = flag.Bool("s", false, "sync podcasts")
-	all           = flag.Bool("A", false, "mark all podcasts as downloaded")
-	quiet         = flag.Bool("q", false, "be quiet while syncing")
+	add               = flag.String("a", "", "add a new podcast")
+	remove            = flag.Int("r", -1, "remove a podcast")
+	info              = flag.Int("i", -1, "show podcast info")
+	list              = flag.Bool("l", false, "list podcasts")
+	sync              = flag.Bool("s", false, "sync podcasts")
+	all               = flag.Bool("A", false, "mark all podcasts as downloaded")
+	quiet             = flag.Bool("q", false, "be quiet while syncing")
 )
 
 var lrss, llog *podcast.List

@@ -10,7 +10,7 @@ import (
 )
 
 type List struct {
-	File string
+	File  string
 	Items []string
 }
 
