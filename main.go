@@ -32,9 +32,7 @@ var lrss, llog *podcast.List
 
 func main() {
 	var err error
-
 	flag.Parse()
-
 	lrss, err = podcast.Open(*configFile)
 	if err != nil {
 		log.Fatalln(err)
@@ -45,7 +43,6 @@ func main() {
 		log.Fatalln(err)
 	}
 	defer llog.Dump()
-
 	switch {
 	case *add != "":
 		err = lrss.Add(*add)
@@ -66,7 +63,6 @@ func main() {
 		flag.Usage()
 		os.Exit(2)
 	}
-
 	if err != nil {
 		log.Fatalln("Error:", err)
 	}
@@ -109,7 +105,7 @@ func syncPodcast(rss string) error {
 	if err != nil {
 		return err
 	}
-	for i, e := range p.XML.Episodes {
+	for i, e := range p.Episodes() {
 		if llog.Exists(e.Enclosure.Url) {
 			continue
 		}
@@ -150,7 +146,7 @@ func logPodcast(rss string) error {
 	if err != nil {
 		return err
 	}
-	for _, e := range p.XML.Episodes {
+	for _, e := range p.Episodes() {
 		if llog.Exists(e.Enclosure.Url) {
 			continue
 		}
