@@ -70,14 +70,7 @@ func (l *List) Remove(n int) error {
 	if n < 0 || n >= len(l.Items) {
 		return errors.New("index out of bounds")
 	}
-	tmp := make([]string, 0)
-	for i, item := range l.Items {
-		if i == n {
-			continue
-		}
-		tmp = append(tmp, item)
-	}
-	l.Items = tmp
+	l.Items = append(l.Items[:n], l.Items[n+1:]...)
 	return nil
 }
 
